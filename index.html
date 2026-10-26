@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pentatonic Scale Visualizer & Tab Creator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            base: '#0A0C10',
+                            card: '#121620',
+                            surface: '#1A202C',
+                            border: '#2D3748',
+                        },
+                        accent: {
+                            orange: '#FF5E00',
+                            gold: '#FFB800',
+                            cyan: '#00F0FF',
+                            purple: '#9D4EDD',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0A0C10;
+            color: #E2E8F0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0A0C10;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2D3748;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FF5E00;
+        }
+
+        /* Fretboard styles */
+        .fretboard-wood {
+            background: linear-gradient(180deg, #181c26 0%, #0f1219 100%);
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+        }
+
+        .fret-wire {
+            border-right: 2px solid #64748b;
+            box-shadow: 1px 0 2px rgba(0,0,0,0.5);
+        }
+
+        .fret-wire-last {
+            border-right: 4px solid #94a3b8;
+        }
+
+        .nut-wire {
+            border-right: 6px solid #e2e8f0;
+        }
+
+        /* Note badges */
+        .note-badge {
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.15s ease;
+        }
+        .note-badge:hover {
+            transform: scale(1.25);
+            z-index: 30;
+        }
+
+        .note-root {
+            background: linear-gradient(135deg, #FF5E00 0%, #D94600 100%);
+            color: #FFFFFF;
+            border: 2px solid #FFB800;
+            box-shadow: 0 0 12px rgba(255, 94, 0, 0.7);
+        }
+
+        .note-scale {
+            background: linear-gradient(135deg, #00F0FF 0%, #00B4D8 100%);
+            color: #0A0C10;
+            border: 1px solid #70E000;
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+        }
+
+        .note-dimmed {
+            opacity: 0.25;
+            filter: grayscale(80%);
+        }
+
+        .tab-cell-active {
+            background-color: rgba(255, 94, 0, 0.25) !important;
+            border-color: #FF5E00 !important;
+        }
+
+        .tab-col-playing {
+            background-color: rgba(0, 240, 255, 0.2) !important;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="bg-dark-card border-b border-dark-border sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-accent-orange to-accent-gold flex items-center justify-center text-dark-base font-black text-xl shadow-lg shadow-accent-orange/20">
+                    <i class="fa-solid fa-guitar"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        Penta<span class="text-accent-orange">Lab</span>
+                        <span class="text-[10px] bg-dark-surface border border-dark-border text-accent-cyan px-2 py-0.5 rounded-full font-mono uppercase">Guitar Studio</span>
+                    </h1>
+                </div>
+            </div>
+
+            <!-- Quick Action Links -->
+            <div class="flex items-center gap-2 sm:gap-4 text-xs font-semibold">
+                <a href="#fretboard-section" class="px-3 py-1.5 rounded-lg bg-dark-surface hover:bg-dark-border text-gray-300 hover:text-white transition-colors">
+                    <i class="fa-solid fa-layer-group text-accent-gold mr-1"></i> Visualizer
+                </a>
+                <a href="#tab-section" class="px-3 py-1.5 rounded-lg bg-dark-surface hover:bg-dark-border text-gray-300 hover:text-white transition-colors">
+                    <i class="fa-solid fa-music text-accent-cyan mr-1"></i> Tab Creator
+                </a>
+                <a href="#tools-section" class="px-3 py-1.5 rounded-lg bg-dark-surface hover:bg-dark-border text-gray-300 hover:text-white transition-colors">
+                    <i class="fa-solid fa-sliders text-accent-orange mr-1"></i> Tools
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+
+        <!-- SECTION 1: CONTROLS & FRETBOARD VISUALIZER -->
+        <section id="fretboard-section" class="bg-dark-card border border-dark-border rounded-2xl p-4 sm:p-6 shadow-xl">
+            <!-- SECTION HEADER & CONTROLS -->
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 pb-6 border-b border-dark-border">
+                <!-- Scale & Key Selectors -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-grow">
+                    <!-- Key Selection -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Key</label>
+                        <select id="key-select" class="w-full bg-dark-base border border-dark-border rounded-lg px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-accent-orange">
+                            <option value="C">C</option>
+                            <option value="C#">C# / Db</option>
+                            <option value="D">D</option>
+                            <option value="D#">D# / Eb</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                            <option value="F#">F# / Gb</option>
+                            <option value="G">G</option>
+                            <option value="G#">G# / Ab</option>
+                            <option value="A" selected>A</option>
+                            <option value="A#">A# / Bb</option>
+                            <option value="B">B</option>
+                        </select>
+                    </div>
+
+                    <!-- Scale Type -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Scale Type</label>
+                        <select id="scale-type-select" class="w-full bg-dark-base border border-dark-border rounded-lg px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-accent-orange">
+                            <option value="minor" selected>Minor Pentatonic</option>
+                            <option value="major">Major Pentatonic</option>
+                        </select>
+                    </div>
+
+                    <!-- CAGED Box Position -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">CAGED Pattern</label>
+                        <select id="box-select" class="w-full bg-dark-base border border-dark-border rounded-lg px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-accent-orange">
+                            <option value="all" selected>Full Neck View</option>
+                            <option value="1">Box 1 (Pattern 1)</option>
+                            <option value="2">Box 2 (Pattern 2)</option>
+                            <option value="3">Box 3 (Pattern 3)</option>
+                            <option value="4">Box 4 (Pattern 4)</option>
+                            <option value="5">Box 5 (Pattern 5)</option>
+                        </select>
+                    </div>
+
+                    <!-- Note Label Mode -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Label Display</label>
+                        <select id="label-mode-select" class="w-full bg-dark-base border border-dark-border rounded-lg px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-accent-orange">
+                            <option value="notes" selected>Note Names (e.g. A, C)</option>
+                            <option value="degrees">Scale Degrees (1, b3...)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Legend & Quick Info -->
+                <div class="flex flex-wrap items-center gap-4 text-xs font-semibold bg-dark-base px-4 py-3 rounded-xl border border-dark-border self-start lg:self-center">
+                    <div class="flex items-center gap-2">
+                        <span class="w-4 h-4 rounded-full note-root inline-flex items-center justify-center text-[9px] font-black">R</span>
+                        <span class="text-white">Root Note</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-4 h-4 rounded-full note-scale inline-flex items-center justify-center text-[9px] font-black">T</span>
+                        <span class="text-white">Scale Tone</span>
+                    </div>
+                    <div class="text-gray-400 border-l border-dark-border pl-3 hidden sm:block">
+                        <i class="fa-solid fa-hand-pointer text-accent-gold mr-1"></i> Click note to play & add to Tab
+                    </div>
+                </div>
+            </div>
+
+            <!-- FRETBOARD CONTAINER -->
+            <div class="relative overflow-x-auto pb-4">
+                <div class="min-w-[1000px]">
+                    <!-- Fret Number Markers Top Row -->
+                    <div id="fret-numbers" class="flex text-center text-xs font-mono font-bold text-gray-400 mb-2 pl-12">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+
+                    <!-- Fretboard Grid -->
+                    <div id="fretboard-grid" class="fretboard-wood rounded-xl p-3 border border-dark-border relative shadow-2xl">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- SECTION 2: INTERACTIVE TABLATURE CREATOR & EDITOR -->
+        <section id="tab-section" class="bg-dark-card border border-dark-border rounded-2xl p-4 sm:p-6 shadow-xl">
+            <!-- TAB TITLE & TOP TOOLBAR -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-dark-border">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-file-lines text-accent-cyan"></i> Tablature Creator
+                    </h2>
+                    <p class="text-xs text-gray-400 mt-0.5">Click fretboard notes or type numbers into tab columns to compose your licks.</p>
+                </div>
+
+                <!-- Preset Licks Dropdown & Actions -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <select id="preset-licks-select" class="bg-dark-base border border-dark-border text-gray-200 text-xs font-semibold rounded-lg px-3 py-2 focus:outline-none focus:border-accent-cyan">
+                        <option value="" disabled selected>-- Load Preset Lick --</option>
+                        <option value="classic-blues">⚡ Blues Box 1 Bend Lick (A Minor)</option>
+                        <option value="speed-run">🔥 Pentatonic Speed Run (E Minor)</option>
+                        <option value="major-country">🤠 Country-Rock Double Stop (G Major)</option>
+                    </select>
+
+                    <button id="add-measure-btn" class="bg-dark-surface hover:bg-dark-border text-white text-xs font-bold px-3 py-2 rounded-lg border border-dark-border flex items-center gap-1.5 transition-colors">
+                        <i class="fa-solid fa-plus text-accent-gold"></i> Measure
+                    </button>
+                    <button id="clear-tab-btn" class="bg-dark-surface hover:bg-red-900/40 text-red-400 text-xs font-bold px-3 py-2 rounded-lg border border-dark-border flex items-center gap-1.5 transition-colors">
+                        <i class="fa-solid fa-trash-can"></i> Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- PLAYBACK CONTROL BAR -->
+            <div class="bg-dark-base p-4 rounded-xl border border-dark-border flex flex-wrap items-center justify-between gap-4 mb-6">
+                <!-- Playback Buttons -->
+                <div class="flex items-center gap-3">
+                    <button id="tab-play-btn" class="bg-gradient-to-r from-accent-orange to-accent-gold hover:opacity-95 text-dark-base font-black px-5 py-2.5 rounded-lg flex items-center gap-2 text-sm shadow-md shadow-accent-orange/20 transition-all">
+                        <i class="fa-solid fa-play"></i> Play
+                    </button>
+                    <button id="tab-stop-btn" class="bg-dark-surface hover:bg-dark-border text-gray-300 font-bold px-4 py-2.5 rounded-lg flex items-center gap-2 text-sm border border-dark-border transition-colors">
+                        <i class="fa-solid fa-stop"></i> Stop
+                    </button>
+                    
+                    <label class="flex items-center gap-2 text-xs text-gray-300 font-semibold cursor-pointer border-l border-dark-border pl-3">
+                        <input type="checkbox" id="tab-loop-checkbox" class="w-4 h-4 accent-accent-orange rounded bg-dark-base border-dark-border">
+                        <span>Loop</span>
+                    </label>
+                </div>
+
+                <!-- Tempo Slider -->
+                <div class="flex items-center gap-4 flex-grow max-w-xs">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Tempo</span>
+                    <input type="range" id="tab-bpm-slider" min="50" max="220" value="110" class="w-full accent-accent-orange cursor-pointer">
+                    <span id="tab-bpm-display" class="font-mono text-sm font-bold text-accent-gold w-16 text-right">110 BPM</span>
+                </div>
+
+                <!-- File Import / Export Options -->
+                <div class="flex items-center gap-2">
+                    <button id="export-ascii-btn" class="bg-dark-surface hover:bg-dark-border text-accent-cyan text-xs font-bold px-3 py-2 rounded-lg border border-dark-border flex items-center gap-1.5 transition-colors">
+                        <i class="fa-solid fa-copy"></i> Copy ASCII
+                    </button>
+                    <button id="export-json-btn" class="bg-dark-surface hover:bg-dark-border text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border border-dark-border flex items-center gap-1.5 transition-colors">
+                        <i class="fa-solid fa-download"></i> Save JSON
+                    </button>
+                    <label class="bg-dark-surface hover:bg-dark-border text-gray-300 text-xs font-bold px-3 py-2 rounded-lg border border-dark-border flex items-center gap-1.5 cursor-pointer transition-colors">
+                        <i class="fa-solid fa-upload"></i> Load JSON
+                        <input type="file" id="import-json-input" accept=".json" class="hidden">
+                    </label>
+                </div>
+            </div>
+
+            <!-- TAB STAFF GRID EDITOR -->
+            <div class="overflow-x-auto pb-4">
+                <div id="tab-editor-container" class="min-w-[800px] bg-dark-base rounded-xl p-4 border border-dark-border font-mono">
+                    <!-- Dynamic Tab Grid Rendered Here -->
+                </div>
+            </div>
+            <p class="text-[11px] text-gray-500 mt-2 italic">* Tip: Click on any string column in the grid above to activate it, then click notes on the fretboard to insert frets sequentially.</p>
+        </section>
+
+
+        <!-- SECTION 3: PRACTICE TOOLS & THEORY REFERENCE -->
+        <div id="tools-section" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- METRONOME (5 COLS) -->
+            <div class="lg:col-span-5 bg-dark-card border border-dark-border rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-6 pb-4 border-b border-dark-border">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-stopwatch text-accent-orange"></i> Precision Metronome
+                        </h3>
+                        <span id="metro-bpm-display" class="text-2xl font-mono font-bold text-accent-gold">120 BPM</span>
+                    </div>
+
+                    <!-- BPM Slider -->
+                    <div class="space-y-2 mb-6">
+                        <input type="range" id="metro-bpm-slider" min="40" max="240" value="120" class="w-full accent-accent-orange cursor-pointer">
+                        <div class="flex justify-between text-[11px] text-gray-500 font-mono">
+                            <span>40 Slow</span>
+                            <span>120 Mid</span>
+                            <span>240 Fast</span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Adjustments -->
+                    <div class="flex items-center justify-between gap-2 mb-6">
+                        <button id="metro-minus-5" class="px-3 py-1.5 bg-dark-base border border-dark-border text-gray-300 rounded-lg text-xs font-bold hover:bg-dark-surface">-5</button>
+                        <button id="metro-minus-1" class="px-3 py-1.5 bg-dark-base border border-dark-border text-gray-300 rounded-lg text-xs font-bold hover:bg-dark-surface">-1</button>
+                        <button id="metro-tap-btn" class="flex-grow py-1.5 bg-dark-surface border border-accent-gold/40 text-accent-gold rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-dark-border">Tap Tempo</button>
+                        <button id="metro-plus-1" class="px-3 py-1.5 bg-dark-base border border-dark-border text-gray-300 rounded-lg text-xs font-bold hover:bg-dark-surface">+1</button>
+                        <button id="metro-plus-5" class="px-3 py-1.5 bg-dark-base border border-dark-border text-gray-300 rounded-lg text-xs font-bold hover:bg-dark-surface">+5</button>
+                    </div>
+
+                    <!-- Settings: Accents & Volume -->
+                    <div class="grid grid-cols-2 gap-4 p-3 bg-dark-base rounded-xl border border-dark-border mb-6 text-xs">
+                        <div>
+                            <label class="block text-gray-400 mb-1 font-semibold">Time Sig / Accent</label>
+                            <select id="metro-accent-select" class="w-full bg-dark-surface border border-dark-border rounded px-2 py-1 text-white font-bold">
+                                <option value="4" selected>4/4 Time (Accent on 1)</option>
+                                <option value="3">3/4 Time</option>
+                                <option value="0">No Accent (Straight)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 mb-1 font-semibold">Volume</label>
+                            <input type="range" id="metro-volume" min="0" max="1" step="0.1" value="0.7" class="w-full accent-accent-orange cursor-pointer mt-1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metronome Start/Stop Toggle -->
+                <button id="metro-toggle-btn" class="w-full bg-gradient-to-r from-accent-orange to-accent-gold text-dark-base font-black py-3 rounded-xl text-base shadow-lg shadow-accent-orange/20 transition-all">
+                    Start Metronome
+                </button>
+            </div>
+
+            <!-- KEY & SCALE THEORY REFERENCE (7 COLS) -->
+            <div class="lg:col-span-7 bg-dark-card border border-dark-border rounded-2xl p-6 shadow-xl">
+                <h3 class="text-lg font-bold text-white mb-4 pb-4 border-b border-dark-border flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-accent-gold"></i> Scale Formula & Harmony Reference
+                </h3>
+
+                <div id="theory-content" class="space-y-4 text-xs sm:text-sm">
+                    <!-- Populated dynamically based on selected key & scale -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-dark-card border-t border-dark-border py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-gray-500">
+            <p>PentaLab Guitar Studio • Interactive Pentatonic Scale Visualizer & Tablature Engine</p>
+        </div>
+    </footer>
+
+    <!-- ASCII EXPORT MODAL -->
+    <div id="ascii-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-dark-card border border-dark-border rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center pb-3 border-b border-dark-border">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-code text-accent-cyan"></i> ASCII Tablature Output
+                </h3>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <textarea id="ascii-text-area" readonly class="w-full h-64 bg-dark-base border border-dark-border rounded-xl p-4 font-mono text-xs text-accent-gold focus:outline-none leading-relaxed"></textarea>
+            <div class="flex justify-end gap-3">
+                <button id="copy-ascii-modal-btn" class="bg-gradient-to-r from-accent-orange to-accent-gold text-dark-base font-bold px-5 py-2 rounded-lg text-xs">
+                    Copy to Clipboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+        /* ===================================================================
+           1. MUSIC THEORY & SCALE CONSTANTS
+           =================================================================== */
+        const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const STANDARD_TUNING = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2']; // 1st String (High E) down to 6th String (Low E)
+        const STRING_LABELS = ['e', 'B', 'G', 'D', 'A', 'E'];
+
+        // Interval formulas (semitone steps from root)
+        const SCALE_FORMULAS = {
+            'minor': {
+                intervals: [0, 3, 5, 7, 10], // 1, b3, 4, 5, b7
+                degreeNames: ['1', 'b3', '4', '5', 'b7'],
+                name: 'Minor Pentatonic'
+            },
+            'major': {
+                intervals: [0, 2, 4, 7, 9],  // 1, 2, 3, 5, 6
+                degreeNames: ['1', '2', '3', '5', '6'],
+                name: 'Major Pentatonic'
+            }
+        };
+
+        // CAGED Box Offsets (approximate fret spans relative to key root position)
+        const CAGED_BOX_RANGES = {
+            'minor': {
+                '1': { minOffset: 0, maxOffset: 3 },
+                '2': { minOffset: 2, maxOffset: 5 },
+                '3': { minOffset: 5, maxOffset: 7 },
+                '4': { minOffset: 7, maxOffset: 10 },
+                '5': { minOffset: 9, maxOffset: 12 }
+            },
+            'major': {
+                '1': { minOffset: -3, maxOffset: 0 },
+                '2': { minOffset: 0, maxOffset: 2 },
+                '3': { minOffset: 2, maxOffset: 5 },
+                '4': { minOffset: 4, maxOffset: 7 },
+                '5': { minOffset: 7, maxOffset: 9 }
+            }
+        };
+
+        // Absolute Note Frequencies in Hz for audio synth
+        const BASE_FREQUENCIES = {
+            'E2': 82.41, 'F2': 87.31, 'F#2': 92.50, 'G2': 98.00, 'G#2': 103.83, 'A2': 110.00, 'A#2': 116.54, 'B2': 123.47,
+            'C3': 130.81, 'C#3': 138.59, 'D3': 146.83, 'D#3': 155.56, 'E3': 164.81, 'F3': 174.61, 'F#3': 185.00, 'G3': 196.00, 'G#3': 207.65, 'A3': 220.00, 'A#3': 233.08, 'B3': 246.94,
+            'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63, 'F4': 349.23, 'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
+            'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'D#5': 622.25, 'E5': 659.25, 'F5': 698.46, 'F#5': 739.99, 'G5': 783.99, 'G#5': 830.61, 'A5': 880.00, 'A#5': 932.33, 'B5': 987.77, 'C6': 1046.50
+        };
+
+
+        /* ===================================================================
+           2. WEB AUDIO SYNTHESIZER ENGINE
+           =================================================================== */
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // Plucked Guitar String Audio Synthesis
+        function triggerGuitarNote(freq, duration = 0.8) {
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                const filter = ctx.createBiquadFilter();
+
+                // Triangle wave for warm plucked tone
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+                // Lowpass filter to simulate string dampening
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(freq * 3, ctx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(freq * 0.8, ctx.currentTime + duration);
+
+                // Gain envelope
+                gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            } catch (e) {
+                console.error("Audio error:", e);
+            }
+        }
+
+        // Metronome Click Synthesis
+        function triggerMetronomeClick(isAccent, volume = 0.7) {
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(isAccent ? 1200 : 800, ctx.currentTime);
+
+                gain.gain.setValueAtTime(volume, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start();
+                osc.stop(ctx.currentTime + 0.05);
+            } catch (e) {
+                console.error("Metronome audio error:", e);
+            }
+        }
+
+        function getPitchFrequency(stringIdx, fret) {
+            const openNoteStr = STANDARD_TUNING[stringIdx]; // e.g. E4
+            const openNoteName = openNoteStr.replace(/[0-9]/g, '');
+            const openOctave = parseInt(openNoteStr.replace(/[^0-9]/g, ''));
+            
+            const baseNoteIndex = NOTE_NAMES.indexOf(openNoteName);
+            const totalSemitones = baseNoteIndex + fret;
+            
+            const targetNoteName = NOTE_NAMES[totalSemitones % 12];
+            const targetOctave = openOctave + Math.floor(totalSemitones / 12);
+            
+            const noteKey = `${targetNoteName}${targetOctave}`;
+            return BASE_FREQUENCIES[noteKey] || 440;
+        }
+
+
+        /* ===================================================================
+           3. FRETBOARD RENDERER LOGIC
+           =================================================================== */
+        let state = {
+            key: 'A',
+            scaleType: 'minor',
+            box: 'all',
+            labelMode: 'notes'
+        };
+
+        function getScaleNotesAndDegrees(key, scaleType) {
+            const rootIdx = NOTE_NAMES.indexOf(key);
+            const formula = SCALE_FORMULAS[scaleType];
+            
+            const notes = [];
+            const degreesMap = {};
+
+            formula.intervals.forEach((interval, idx) => {
+                const noteName = NOTE_NAMES[(rootIdx + interval) % 12];
+                notes.push(noteName);
+                degreesMap[noteName] = formula.degreeNames[idx];
+            });
+
+            return { notes, degreesMap };
+        }
+
+        function renderFretboardHeader() {
+            const fretHeaderContainer = document.getElementById('fret-numbers');
+            fretHeaderContainer.innerHTML = '';
+
+            // Open string column
+            const openCol = document.createElement('div');
+            openCol.className = 'w-12 text-center text-accent-gold font-bold';
+            openCol.textContent = 'Open';
+            fretHeaderContainer.appendChild(openCol);
+
+            // 22 Frets
+            for (let f = 1; f <= 22; f++) {
+                const fretDiv = document.createElement('div');
+                fretDiv.className = 'flex-1 text-center';
+                
+                // Add marker indicators for 3, 5, 7, 9, 12, 15, 17, 19, 21
+                if ([3, 5, 7, 9, 15, 17, 19, 21].includes(f)) {
+                    fretDiv.innerHTML = `${f} <span class="text-accent-gold">•</span>`;
+                } else if (f === 12 || f === 22) {
+                    fretDiv.innerHTML = `${f} <span class="text-accent-orange">••</span>`;
+                } else {
+                    fretDiv.textContent = f;
+                }
+                fretHeaderContainer.appendChild(fretDiv);
+            }
+        }
+
+        function renderFretboardGrid() {
+            const grid = document.getElementById('fretboard-grid');
+            grid.innerHTML = '';
+
+            const { notes: scaleNotes, degreesMap } = getScaleNotesAndDegrees(state.key, state.scaleType);
+            const rootIdx = NOTE_NAMES.indexOf(state.key);
+
+            // Calculate CAGED fret box boundaries if box selected
+            let boxMinFret = 0;
+            let boxMaxFret = 22;
+
+            if (state.box !== 'all') {
+                const boxNum = state.box;
+                const boxRange = CAGED_BOX_RANGES[state.scaleType][boxNum];
+                
+                // Find root note fret on 6th string
+                const lowEIndex = NOTE_NAMES.indexOf('E');
+                let rootFretOn6th = (rootIdx - lowEIndex + 12) % 12;
+                if (rootFretOn6th === 0 && state.scaleType === 'major' && boxNum === '1') rootFretOn6th = 12;
+
+                boxMinFret = rootFretOn6th + boxRange.minOffset;
+                boxMaxFret = rootFretOn6th + boxRange.maxOffset;
+
+                if (boxMinFret < 0) {
+                    boxMinFret += 12;
+                    boxMaxFret += 12;
+                }
+            }
+
+            // Render 6 strings
+            STANDARD_TUNING.forEach((openNoteStr, stringIdx) => {
+                const openNoteName = openNoteStr.replace(/[0-9]/g, '');
+                const openNoteBaseIndex = NOTE_NAMES.indexOf(openNoteName);
+
+                const stringRow = document.createElement('div');
+                stringRow.className = 'flex items-center h-9 relative border-b border-gray-800/60';
+
+                // String graphic line
+                const stringLine = document.createElement('div');
+                stringLine.className = 'absolute left-0 right-0 top-1/2 -translate-y-1/2 bg-gray-500/80 pointer-events-none';
+                stringLine.style.height = `${1 + stringIdx * 0.5}px`;
+                stringRow.appendChild(stringLine);
+
+                // Render Frets (0 to 22)
+                for (let fret = 0; fret <= 22; fret++) {
+                    const fretCell = document.createElement('div');
+                    
+                    let fretBorderClass = 'fret-wire';
+                    if (fret === 0) fretBorderClass = 'w-12 nut-wire pr-1';
+                    else if (fret === 22) fretBorderClass = 'fret-wire-last';
+
+                    fretCell.className = `relative flex-1 h-full flex items-center justify-center ${fretBorderClass}`;
+
+                    const noteName = NOTE_NAMES[(openNoteBaseIndex + fret) % 12];
+                    const isScaleNote = scaleNotes.includes(noteName);
+                    const isRoot = noteName === state.key;
+
+                    // Box filtering check
+                    let inBox = true;
+                    if (state.box !== 'all') {
+                        let normalizedFret = fret;
+                        if (boxMinFret > 12 && fret <= (boxMaxFret % 12)) normalizedFret += 12;
+                        if (normalizedFret < boxMinFret || normalizedFret > boxMaxFret) {
+                            inBox = false;
+                        }
+                    }
+
+                    if (isScaleNote) {
+                        const noteBtn = document.createElement('button');
+                        const label = (state.labelMode === 'notes') ? noteName : degreesMap[noteName];
+                        
+                        let badgeStyle = isRoot ? 'note-root font-black' : 'note-scale font-bold';
+                        if (!inBox) badgeStyle += ' note-dimmed';
+
+                        noteBtn.className = `z-10 w-6 h-6 sm:w-7 sm:h-7 rounded-full text-[10px] sm:text-xs flex items-center justify-center note-badge ${badgeStyle}`;
+                        noteBtn.textContent = label;
+                        noteBtn.title = `${noteName} (String ${stringIdx + 1}, Fret ${fret})`;
+
+                        // Click Handler: Play sound & Insert into active Tab
+                        noteBtn.onclick = () => {
+                            const freq = getPitchFrequency(stringIdx, fret);
+                            triggerGuitarNote(freq);
+                            insertNoteToActiveTabColumn(stringIdx, fret);
+                        };
+
+                        fretCell.appendChild(noteBtn);
+                    }
+
+                    stringRow.appendChild(fretCell);
+                }
+
+                grid.appendChild(stringRow);
+            });
+
+            updateTheoryReference();
+        }
+
+
+        /* ===================================================================
+           4. TABLATURE CREATOR ENGINE
+           =================================================================== */
+        let tabData = {
+            measures: [
+                createEmptyMeasure(),
+                createEmptyMeasure()
+            ]
+        };
+
+        let activeColIndex = { measure: 0, col: 0 };
+        let isTabPlaying = false;
+        let tabPlaybackTimer = null;
+
+        function createEmptyMeasure(columnsCount = 8) {
+            const cols = [];
+            for (let i = 0; i < columnsCount; i++) {
+                // 6 strings, null means no note
+                cols.push([null, null, null, null, null, null]);
+            }
+            return cols;
+        }
+
+        function renderTabEditor() {
+            const container = document.getElementById('tab-editor-container');
+            container.innerHTML = '';
+
+            const flexWrapper = document.createElement('div');
+            flexWrapper.className = 'flex items-center gap-2 overflow-x-auto py-2';
+
+            tabData.measures.forEach((measure, mIdx) => {
+                const measureDiv = document.createElement('div');
+                measureDiv.className = 'flex items-center bg-dark-card border border-dark-border rounded-lg p-2 relative';
+
+                // String Name Labels (e, B, G, D, A, E)
+                const stringLabelsDiv = document.createElement('div');
+                stringLabelsDiv.className = 'flex flex-col justify-between h-32 pr-2 border-r border-dark-border text-xs font-bold text-gray-400 select-none';
+                STRING_LABELS.forEach(lbl => {
+                    const l = document.createElement('span');
+                    l.textContent = lbl;
+                    stringLabelsDiv.appendChild(l);
+                });
+                measureDiv.appendChild(stringLabelsDiv);
+
+                // Render Measure Columns
+                const colsWrapper = document.createElement('div');
+                colsWrapper.className = 'flex items-center gap-1 px-2';
+
+                measure.forEach((col, cIdx) => {
+                    const colDiv = document.createElement('div');
+                    const isActive = (activeColIndex.measure === mIdx && activeColIndex.col === cIdx);
+                    
+                    colDiv.id = `tab-col-${mIdx}-${cIdx}`;
+                    colDiv.className = `flex flex-col justify-between h-32 w-7 px-1 py-0.5 rounded cursor-pointer transition-colors border ${isActive ? 'tab-cell-active border-accent-orange' : 'border-transparent hover:bg-dark-surface'}`;
+                    
+                    colDiv.onclick = () => {
+                        activeColIndex = { measure: mIdx, col: cIdx };
+                        renderTabEditor();
+                    };
+
+                    // Render 6 String Cells (0=High E, 5=Low E)
+                    col.forEach((fretVal, sIdx) => {
+                        const cell = document.createElement('input');
+                        cell.type = 'text';
+                        cell.maxLength = 2;
+                        cell.value = fretVal !== null ? fretVal : '-';
+                        cell.className = 'w-full text-center text-xs font-bold bg-transparent text-accent-gold focus:outline-none focus:text-accent-cyan';
+
+                        // Allow Direct Typing into Tab
+                        cell.onchange = (e) => {
+                            const val = e.target.value.trim();
+                            if (val === '' || val === '-') {
+                                tabData.measures[mIdx][cIdx][sIdx] = null;
+                            } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num) && num >= 0 && num <= 24) {
+                                    tabData.measures[mIdx][cIdx][sIdx] = num;
+                                    const freq = getPitchFrequency(sIdx, num);
+                                    triggerGuitarNote(freq);
+                                } else {
+                                    e.target.value = fretVal !== null ? fretVal : '-';
+                                }
+                            }
+                        };
+
+                        colDiv.appendChild(cell);
+                    });
+
+                    colsWrapper.appendChild(colDiv);
+                });
+
+                measureDiv.appendChild(colsWrapper);
+
+                // Measure Barline & Controls
+                const barlineDiv = document.createElement('div');
+                barlineDiv.className = 'pl-2 border-l-2 border-dark-border h-32 flex flex-col justify-between text-[10px] text-gray-500';
+                barlineDiv.innerHTML = `<span>M${mIdx + 1}</span>`;
+                
+                if (tabData.measures.length > 1) {
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'text-red-400 hover:text-red-300 p-1';
+                    delBtn.title = 'Delete Measure';
+                    delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    delBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        deleteMeasure(mIdx);
+                    };
+                    barlineDiv.appendChild(delBtn);
+                }
+
+                measureDiv.appendChild(barlineDiv);
+                flexWrapper.appendChild(measureDiv);
+            });
+
+            container.appendChild(flexWrapper);
+        }
+
+        function insertNoteToActiveTabColumn(stringIdx, fret) {
+            const { measure, col } = activeColIndex;
+            if (tabData.measures[measure] && tabData.measures[measure][col]) {
+                tabData.measures[measure][col][stringIdx] = fret;
+                
+                // Advance active column automatically
+                advanceActiveColumn();
+                renderTabEditor();
+            }
+        }
+
+        function advanceActiveColumn() {
+            let { measure, col } = activeColIndex;
+            col++;
+            if (col >= tabData.measures[measure].length) {
+                col = 0;
+                measure++;
+                if (measure >= tabData.measures.length) {
+                    // Add new measure automatically if at end
+                    tabData.measures.push(createEmptyMeasure());
+                }
+            }
+            activeColIndex = { measure, col };
+        }
+
+        function deleteMeasure(mIdx) {
+            tabData.measures.splice(mIdx, 1);
+            activeColIndex = { measure: 0, col: 0 };
+            renderTabEditor();
+        }
+
+        // Tab Playback Engine
+        function startTabPlayback() {
+            if (isTabPlaying) stopTabPlayback();
+
+            isTabPlaying = true;
+            const playBtn = document.getElementById('tab-play-btn');
+            playBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+
+            const bpm = parseInt(document.getElementById('tab-bpm-slider').value);
+            const intervalMs = (60 / bpm) * 1000 / 2; // Eighth note playback speed
+
+            let currentM = 0;
+            let currentC = 0;
+
+            tabPlaybackTimer = setInterval(() => {
+                // Clear previous highlighting
+                document.querySelectorAll('.tab-col-playing').forEach(el => el.classList.remove('tab-col-playing'));
+
+                if (currentM >= tabData.measures.length) {
+                    if (document.getElementById('tab-loop-checkbox').checked) {
+                        currentM = 0;
+                        currentC = 0;
+                    } else {
+                        stopTabPlayback();
+                        return;
+                    }
+                }
+
+                const colEl = document.getElementById(`tab-col-${currentM}-${currentC}`);
+                if (colEl) colEl.classList.add('tab-col-playing');
+
+                // Play all notes in column simultaneously (Chord / Single note)
+                const columnNotes = tabData.measures[currentM][currentC];
+                columnNotes.forEach((fret, stringIdx) => {
+                    if (fret !== null) {
+                        const freq = getPitchFrequency(stringIdx, fret);
+                        triggerGuitarNote(freq, 0.5);
+                    }
+                });
+
+                currentC++;
+                if (currentC >= tabData.measures[currentM].length) {
+                    currentC = 0;
+                    currentM++;
+                }
+
+            }, intervalMs);
+        }
+
+        function stopTabPlayback() {
+            isTabPlaying = false;
+            clearInterval(tabPlaybackTimer);
+            document.querySelectorAll('.tab-col-playing').forEach(el => el.classList.remove('tab-col-playing'));
+            const playBtn = document.getElementById('tab-play-btn');
+            playBtn.innerHTML = '<i class="fa-solid fa-play"></i> Play';
+        }
+
+
+        /* ===================================================================
+           5. PRESET LICKS & EXPORT LOGIC
+           =================================================================== */
+        const PRESET_LICKS = {
+            'classic-blues': {
+                key: 'A',
+                scaleType: 'minor',
+                measures: [
+                    [
+                        [null, null, 14, null, null, null],
+                        [15, null, null, null, null, null],
+                        [12, null, null, null, null, null],
+                        [null, 15, null, null, null, null],
+                        [null, 13, null, null, null, null],
+                        [null, null, 14, null, null, null],
+                        [null, null, 12, null, null, null],
+                        [null, null, null, 14, null, null]
+                    ]
+                ]
+            },
+            'speed-run': {
+                key: 'E',
+                scaleType: 'minor',
+                measures: [
+                    [
+                        [12, null, null, null, null, null],
+                        [15, null, null, null, null, null],
+                        [12, null, null, null, null, null],
+                        [null, 15, null, null, null, null],
+                        [null, 12, null, null, null, null],
+                        [null, null, 14, null, null, null],
+                        [null, null, 12, null, null, null],
+                        [null, null, null, 14, null, null]
+                    ]
+                ]
+            },
+            'major-country': {
+                key: 'G',
+                scaleType: 'major',
+                measures: [
+                    [
+                        [null, 10, 11, null, null, null],
+                        [null, 10, 11, null, null, null],
+                        [null, 8, 9, null, null, null],
+                        [null, null, null, 10, null, null],
+                        [null, null, null, null, 10, null],
+                        [null, null, null, null, null, 3],
+                        [null, null, null, null, null, null],
+                        [null, null, null, null, null, null]
+                    ]
+                ]
+            }
+        };
+
+        function generateASCIITab() {
+            let output = '';
+            
+            STRING_LABELS.forEach((label, sIdx) => {
+                let line = `${label}|`;
+                tabData.measures.forEach((measure) => {
+                    measure.forEach((col) => {
+                        const fret = col[sIdx];
+                        if (fret === null) line += '---';
+                        else if (fret < 10) line += `-${fret}-`;
+                        else line += `-${fret}`;
+                    });
+                    line += '|';
+                });
+                output += line + '\n';
+            });
+
+            return output;
+        }
+
+
+        /* ===================================================================
+           6. METRONOME ENGINE LOGIC
+           =================================================================== */
+        let isMetroRunning = false;
+        let metroTimer = null;
+        let metroBpm = 120;
+        let metroBeatCount = 0;
+        let tapTimes = [];
+
+        function startMetronome() {
+            isMetroRunning = true;
+            metroBeatCount = 0;
+            const btn = document.getElementById('metro-toggle-btn');
+            btn.textContent = 'Stop Metronome';
+            btn.className = 'w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl text-base shadow-lg transition-all';
+
+            runMetroTick();
+        }
+
+        function stopMetronome() {
+            isMetroRunning = false;
+            clearTimeout(metroTimer);
+            const btn = document.getElementById('metro-toggle-btn');
+            btn.textContent = 'Start Metronome';
+            btn.className = 'w-full bg-gradient-to-r from-accent-orange to-accent-gold text-dark-base font-black py-3 rounded-xl text-base shadow-lg shadow-accent-orange/20 transition-all';
+        }
+
+        function runMetroTick() {
+            if (!isMetroRunning) return;
+
+            const accentInterval = parseInt(document.getElementById('metro-accent-select').value);
+            const volume = parseFloat(document.getElementById('metro-volume').value);
+
+            const isAccent = (accentInterval > 0) && (metroBeatCount % accentInterval === 0);
+            triggerMetronomeClick(isAccent, volume);
+
+            metroBeatCount++;
+            const intervalMs = (60 / metroBpm) * 1000;
+            metroTimer = setTimeout(runMetroTick, intervalMs);
+        }
+
+
+        /* ===================================================================
+           7. THEORY REFERENCE UPDATE LOGIC
+           =================================================================== */
+        function updateTheoryReference() {
+            const { key, scaleType } = state;
+            const { notes, degreesMap } = getScaleNotesAndDegrees(key, scaleType);
+            const container = document.getElementById('theory-content');
+
+            const isMinor = scaleType === 'minor';
+            const chordCompat = isMinor
+                ? `Minor chords (${key}m), Minor 7ths (${key}m7), and Blues Dominant 7th progressions (${key}7).`
+                : `Major chords (${key}), Major 7ths (${key}maj7), and Country/Pop/Rock Diatonic Major progressions.`;
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-dark-base p-4 rounded-xl border border-dark-border">
+                        <span class="text-accent-gold font-bold uppercase text-[10px] tracking-wider">Formula & Notes</span>
+                        <h4 class="text-base font-extrabold text-white mt-1 mb-2">${key} ${SCALE_FORMULAS[scaleType].name}</h4>
+                        <div class="flex flex-wrap gap-2 my-3">
+                            ${notes.map(n => `<span class="px-2.5 py-1 rounded-lg font-mono font-bold text-xs ${n === key ? 'bg-accent-orange text-white' : 'bg-dark-surface text-accent-cyan'}">${n} (${degreesMap[n]})</span>`).join('')}
+                        </div>
+                        <p class="text-gray-400 text-xs">Interval pattern: <span class="font-mono text-gray-200">${isMinor ? 'Root - b3 - 4 - 5 - b7' : 'Root - 2 - 3 - 5 - 6'}</span></p>
+                    </div>
+
+                    <div class="bg-dark-base p-4 rounded-xl border border-dark-border">
+                        <span class="text-accent-cyan font-bold uppercase text-[10px] tracking-wider">Harmonic Compatibility</span>
+                        <h4 class="text-base font-extrabold text-white mt-1 mb-2">When to Play</h4>
+                        <p class="text-gray-300 text-xs leading-relaxed mb-2">${chordCompat}</p>
+                        <p class="text-gray-400 text-xs">💡 <strong class="text-gray-200">Pro Tip:</strong> Focus on ending phrasing on the <span class="text-accent-orange font-bold">Root (${key})</span> note to create strong resolution.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        /* ===================================================================
+           8. EVENT LISTENERS & INITIALIZATION
+           =================================================================== */
+        window.addEventListener('DOMContentLoaded', () => {
+            renderFretboardHeader();
+            renderFretboardGrid();
+            renderTabEditor();
+
+            // Visualizer Controls
+            document.getElementById('key-select').addEventListener('change', (e) => {
+                state.key = e.target.value;
+                renderFretboardGrid();
+            });
+
+            document.getElementById('scale-type-select').addEventListener('change', (e) => {
+                state.scaleType = e.target.value;
+                renderFretboardGrid();
+            });
+
+            document.getElementById('box-select').addEventListener('change', (e) => {
+                state.box = e.target.value;
+                renderFretboardGrid();
+            });
+
+            document.getElementById('label-mode-select').addEventListener('change', (e) => {
+                state.labelMode = e.target.value;
+                renderFretboardGrid();
+            });
+
+            // Tab Controls
+            document.getElementById('add-measure-btn').addEventListener('click', () => {
+                tabData.measures.push(createEmptyMeasure());
+                renderTabEditor();
+            });
+
+            document.getElementById('clear-tab-btn').addEventListener('click', () => {
+                tabData.measures = [createEmptyMeasure(), createEmptyMeasure()];
+                activeColIndex = { measure: 0, col: 0 };
+                renderTabEditor();
+            });
+
+            document.getElementById('tab-play-btn').addEventListener('click', () => {
+                if (isTabPlaying) stopTabPlayback();
+                else startTabPlayback();
+            });
+
+            document.getElementById('tab-stop-btn').addEventListener('click', stopTabPlayback);
+
+            document.getElementById('tab-bpm-slider').addEventListener('input', (e) => {
+                document.getElementById('tab-bpm-display').textContent = `${e.target.value} BPM`;
+                if (isTabPlaying) {
+                    stopTabPlayback();
+                    startTabPlayback();
+                }
+            });
+
+            // Preset Licks Loader
+            document.getElementById('preset-licks-select').addEventListener('change', (e) => {
+                const presetKey = e.target.value;
+                if (PRESET_LICKS[presetKey]) {
+                    const preset = PRESET_LICKS[presetKey];
+                    state.key = preset.key;
+                    state.scaleType = preset.scaleType;
+                    
+                    document.getElementById('key-select').value = preset.key;
+                    document.getElementById('scale-type-select').value = preset.scaleType;
+
+                    tabData.measures = JSON.parse(JSON.stringify(preset.measures));
+                    activeColIndex = { measure: 0, col: 0 };
+
+                    renderFretboardGrid();
+                    renderTabEditor();
+                }
+            });
+
+            // Export ASCII Modal
+            document.getElementById('export-ascii-btn').addEventListener('click', () => {
+                document.getElementById('ascii-text-area').value = generateASCIITab();
+                document.getElementById('ascii-modal').classList.remove('hidden');
+            });
+
+            document.getElementById('close-modal-btn').addEventListener('click', () => {
+                document.getElementById('ascii-modal').classList.add('hidden');
+            });
+
+            document.getElementById('copy-ascii-modal-btn').addEventListener('click', () => {
+                const text = document.getElementById('ascii-text-area').value;
+                navigator.clipboard.writeText(text);
+                alert('ASCII Tab copied to clipboard!');
+            });
+
+            // JSON File Export / Import
+            document.getElementById('export-json-btn').addEventListener('click', () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tabData));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `pentalab_tab_${state.key}_${state.scaleType}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            });
+
+            document.getElementById('import-json-input').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const imported = JSON.parse(event.target.result);
+                            if (imported.measures) {
+                                tabData = imported;
+                                activeColIndex = { measure: 0, col: 0 };
+                                renderTabEditor();
+                            }
+                        } catch (err) {
+                            alert('Invalid JSON tab file format.');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            });
+
+            // Metronome Controls
+            const metroSlider = document.getElementById('metro-bpm-slider');
+            const updateMetroBpm = (val) => {
+                metroBpm = Math.min(Math.max(val, 40), 240);
+                metroSlider.value = metroBpm;
+                document.getElementById('metro-bpm-display').textContent = `${metroBpm} BPM`;
+            };
+
+            metroSlider.addEventListener('input', (e) => updateMetroBpm(parseInt(e.target.value)));
+            document.getElementById('metro-minus-5').addEventListener('click', () => updateMetroBpm(metroBpm - 5));
+            document.getElementById('metro-minus-1').addEventListener('click', () => updateMetroBpm(metroBpm - 1));
+            document.getElementById('metro-plus-1').addEventListener('click', () => updateMetroBpm(metroBpm + 1));
+            document.getElementById('metro-plus-5').addEventListener('click', () => updateMetroBpm(metroBpm + 5));
+
+            document.getElementById('metro-toggle-btn').addEventListener('click', () => {
+                if (isMetroRunning) stopMetronome();
+                else startMetronome();
+            });
+
+            // Tap Tempo Logic
+            document.getElementById('metro-tap-btn').addEventListener('click', () => {
+                const now = Date.now();
+                tapTimes.push(now);
+                if (tapTimes.length > 4) tapTimes.shift();
+
+                if (tapTimes.length > 1) {
+                    const intervals = [];
+                    for (let i = 1; i < tapTimes.length; i++) {
+                        intervals.push(tapTimes[i] - tapTimes[i - 1]);
+                    }
+                    const avgMs = intervals.reduce((a, b) => a + b) / intervals.length;
+                    const calculatedBpm = Math.round(60000 / avgMs);
+                    updateMetroBpm(calculatedBpm);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
